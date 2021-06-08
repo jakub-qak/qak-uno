@@ -1,5 +1,9 @@
 import random
 import time
+from colorama import init
+from termcolor import colored
+ 
+init()
 
 #There are three types of cards: number, action, action_non_color
 #Numbers go from 0 to 9
@@ -27,9 +31,17 @@ class Card:
 
     def __repr__(self):
         if self.color == None:
-            return self.value
+            return colored(self.value, "grey", "on_white")
         else:
-            return f"{self.color} {self.value}"
+            if self.color == "BLUE":
+                # return colored(self.color, "blue") + " " + colored(self.value, "blue")
+                return colored(f"{self.color} {self.value}", "blue")
+            if self.color == "GREEN":
+                return colored(f"{self.color} {self.value}", "green")
+            if self.color == "YELLOW":
+                return colored(f"{self.color} {self.value}", "yellow")
+            if self.color == "RED":
+                return colored(f"{self.color} {self.value}", "red")
 
 #Deck of Cards (originally 108 cards) 
 class Deck:
@@ -108,13 +120,15 @@ while game:
     deck = Deck()
     deck.shuffle()
 
-    #Choosing how many players will be in the game
+    #Choosing how many players will be in the game (between 2 and 10)
     players_numbers = []
-    num_of_players = input("How many players will play?")
+    num_of_players = input("How many players will play? (2-10)")
+    while not 2 <= int(num_of_players) <= 10:
+        num_of_players = input("Choose from 2-10: ") 
     for player in range(int(num_of_players)):
         players_numbers.append(player + 1)
 
-    
+
     hands = []
     for i in range(len(players_numbers)):
         hands.append(Hand())
@@ -132,7 +146,7 @@ while game:
         print(f"Top card is {top_card}")
     else:
         while top_card.card_type != "number":
-            print(f"{top_card} can't be top card")
+            print(f"{top_card} can't be starting top card")
             top_card = deck.deal(1)[0]
             print(f"Top card is {top_card}\n")
     
@@ -149,13 +163,21 @@ while game:
             print(f"Player number is: {turn}")
             print("Your hand is:")
             players[turn].cards_in_hand()
+            print("---------------")
             print(f"Top card is {top_card}")
             print("---------------")
             choice = input("\nPlay or Draw? (p/d)")
             if choice == "p":
                 idx = input("\nChoose index of card:")
+                while int(idx) > players[turn].amount_of_cards():
+                    print("Index out of range!\n")
+                    idx = input("Choose index again:")
                 pending_card = players[turn].chosen_card(int(idx))
                 print(pending_card)
+                while not valid_card(top_card, pending_card):
+                        print("You can't play this card")
+                        idx = input("Choose index again:")
+                        pending_card = players[turn].chosen_card(int(idx))
                 if valid_card(top_card, pending_card):
                     if pending_card.card_type == "number":
                         top_card = players[turn].remove_card(int(idx))
@@ -174,9 +196,15 @@ while game:
                             else:
                                 turn -= 1 
                     elif pending_card.value == "REVERSE":
-                        top_card = players[turn].remove_card(int(idx))
-                        print(f"Top card is {top_card}")
-                        playing_direction = playing_direction*(-1)
+                        if int(num_of_players) > 2:
+                            top_card = players[turn].remove_card(int(idx))
+                            print(f"Top card is {top_card}")
+                            playing_direction = playing_direction*(-1)
+                        else:
+                            if turn == len(players):
+                                turn = 1
+                            else:
+                                turn += 1
                     elif pending_card.value == "DRAW_2":
                         top_card = players[turn].remove_card(int(idx))
                         print(f"Top card is {top_card}")
